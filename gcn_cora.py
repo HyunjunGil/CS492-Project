@@ -12,7 +12,8 @@ import torch.optim as optim
 from torch.nn.parameter import Parameter
 from torch.nn.modules.module import Module
 
-from dataset import load_cura
+from dataset import load_cora
+from utils import accuracy
 
 class GraphConvolution(Module):
   def __init__(self, in_features, out_features, bias=True):
@@ -55,66 +56,6 @@ class GCN(nn.Module):
     x = F.dropout(x, self.dropout, training=self.training)
     x = self.gc2(x,adj)
     return F.log_softmax(x, dim=1)
-
-def text_to_dict(file_name, divisor = ' '):
-  f = open(file_name, 'r')
-  lines = f.readlines()
-  result = {}
-  for line in lines:
-    line = line.strip().split(divisor)
-    line = list(map(lambda x : int(x), line))
-    result[line[0]] = line[1]
-  f.close()
-  return result
-
-def text_to_array(file_name, divisor = ' '):
-  f = open(file_name, 'r')
-  lines = f.readlines()
-  result = []
-  for line in lines:
-    line = line.strip().split(divisor)
-    line = list(map(lambda x : int(x), line))
-    result.append(line)
-  f.close()
-  return result
-
-def text_to_label_map(file_name, divisor = ' '):
-  f = open(file_name, 'r')
-  line = f.readline()
-  line = line.strip().split(divisor)
-  return list(map(lambda x : int(x), line))
-
-def encode_onehot(labels):
-  classes = set(labels)
-  classes_dict = {c: np.identity(len(classes))[i, :] for i, c in
-                  enumerate(classes)}
-  labels_onehot = np.array(list(map(classes_dict.get, labels)),
-                           dtype=np.int32)
-  return labels_onehot
-
-def normalize(mx):
-  rowsum = np.array(mx.sum(1))
-  r_inv = np.power(rowsum, -1).flatten()
-  r_inv[np.isinf(r_inv)] = 0
-  r_mat_inv = sp.diags(r_inv)
-  mx = r_mat_inv.dot(mx)
-  return mx
-
-def accuracy(output, labels):
-  preds = output.max(1)[1].type_as(labels)
-  correct = preds.eq(labels).double()
-  correct = correct.sum()
-  return correct / len(labels)
-
-def sparse_mx_to_torch_sparse_tensor(sparse_mx):
-  sparse_mx = sparse_mx.tocoo().astype(np.float32)
-  indices = torch.from_numpy(
-      np.vstack((sparse_mx.row, sparse_mx.col)).astype(np.int64))
-  values = torch.from_numpy(sparse_mx.data)
-  shape = torch.Size(sparse_mx.shape)
-  return torch.sparse.FloatTensor(indices, values, shape)
-
-
 
 def train(epoch):
     t = time.time()
@@ -159,8 +100,16 @@ args = {
     "epochs": 200,
     "lr": 0.01,
     "weight_decay": 5e-4,
-    "hidden": 16,
-    "dropout": 0.5
+    "hidden": 300,
+    "dropout": 0.5,
+    # feature_mode
+    # -1 : Use given feature vector and Louvain initialized vector
+    # 0 : Use given feature vector(word bag). In this case, FEATURE_SCALE will not be used
+    # 1 : Use Louvain initialized vector scaled with FEATURE_SCALE
+    # 2 : Use torch.randn(FEATURE_SCALE) as feature vector
+    # 3 : Use torch.ones(FEATURE_SCALE) as feature vector(with normalization)
+    "feature_mode": 2, 
+    "feature_scale": 3
 }
 
 args["cuda"] = not args["no_cuda"] and torch.cuda.is_available()
@@ -170,7 +119,7 @@ torch.manual_seed(args["seed"])
 if args["cuda"]:
     torch.cuda.manual_seed(args["seed"])
 
-adj, features, labels, idx_train, idx_val, idx_test = load_cura()
+adj, features, labels, idx_train, idx_val, idx_test = load_cora(args["feature_mode"], args["feature_scale"])
 
 model = GCN(nfeat=features.shape[1],
             nhid=args["hidden"],
