@@ -1,56 +1,47 @@
+import time
 import numpy as np
+import torch
 
 from utils import *
+import scipy.sparse as sp
 
 from louvain import apply_louvain
 from sknetwork.clustering import Louvain, modularity
 
-edges = text_to_array('cora.cites', '\t')
+loader = np.load('amazon_electronics_computer.npz')
+loader = dict(loader)
+adj = sp.csr_matrix((loader['adj_data'], loader['adj_indices'], loader['adj_indptr']),
+                                   shape=loader['adj_shape'])
 
+print(adj.shape)
+louvain = Louvain()
+labels = louvain.fit_transform(adj)
+print(labels.shape)
+labels_cnt = len(set(labels))
 
-f_edge = open('com-amazon.ungraph.txt', 'r')
-lines = f_edge.readlines()
-edges = []
-cnt = 0
-max_idx = 0
-for line in lines:
-  line = line.lstrip().rstrip().split('\t')
-  line = list(map(lambda x : int(x), line))
-  edges.append(line)
-  max_idx = max(max_idx, line[0], line[1])
-f_edge.close()
+q = modularity(adj, labels)
 
-labels = []
-f_label = open('com-amazon.top297.cmty.txt', 'r')
-lines = f_label.readlines()
-for line in lines:
-  line = line.strip().split(' ')
-  labels.append(int(line[1]))
-f_label.close()
-labels = encode_onehot(labels)
+save_array_as(labels, 'amazon_computer.label')
 
-present = [0 for _ in range(max_idx + 1)]
-for edge in edges:
-  present[edge[0]] += 1
-  present[edge[1]] += 1
+print('======== Louvain Method result ===========')
+print('Total labels : {}'.format(labels_cnt))
+print('Modularity for this label set : {}'.format(q))
 
-nodes = []
-for i in range(len(present)):
-  if (present[i] != 0):
-    nodes.append(i)
+loader = np.load('amazon_electronics_photo.npz')
+loader = dict(loader)
+adj = sp.csr_matrix((loader['adj_data'], loader['adj_indices'], loader['adj_indptr']),
+                                   shape=loader['adj_shape'])
 
-node_map = {j : i for i, j in enumerate(nodes)}
+print(adj.shape)
+louvain = Louvain()
+labels = louvain.fit_transform(adj)
+labels_cnt = len(set(labels))
+print(labels.shape)
 
-nodes = [i for i in range(len(node_map))]
-num_node = len(nodes)
+q = modularity(adj, labels)
 
-edges = np.array(list(map(lambda x : [node_map[x[0]], node_map[x[1]]], edges)))
-labels, label_cnt_map, q = apply_louvain(edges, num_node)
-print(labels)
+save_array_as(labels, 'amazon_photo.label')
 
-save_dict_as(label_cnt_map, 'amazon.labelcnt')
-save_array_as(labels, 'amazon.label')
-
-# ======== Louvain Method result ===========
-# Total labels : 297
-# Modularity for this label set : 0.9258703662074155
+print('======== Louvain Method result ===========')
+print('Total labels : {}'.format(labels_cnt))
+print('Modularity for this label set : {}'.format(q))
