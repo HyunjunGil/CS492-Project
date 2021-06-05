@@ -153,7 +153,7 @@ args = {
     "weight_decay": 5e-4,
     "hidden": 16,
     "dropout": 0.6,
-    "nheads": 8,
+    "nheads": 4,
     "alpha": 0.2,
     # feature_mode
     # -1 : Use given feature vector and Louvain initialized vector
@@ -161,8 +161,8 @@ args = {
     # 1 : Use Louvain initialized vector scaled with FEATURE_SCALE
     # 2 : Use torch.randn(FEATURE_SCALE) as feature vector
     # 3 : Use torch.ones(FEATURE_SCALE) as feature vector(with normalization)
-    "feature_mode": 0,
-    "feature_scale": 1
+    "feature_mode": 1,
+    "feature_scale": 3
 }
 
 args["cuda"] = not args["no_cuda"] and torch.cuda.is_available()

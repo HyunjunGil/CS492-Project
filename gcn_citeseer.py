@@ -12,11 +12,12 @@ import torch.optim as optim
 from torch.nn.parameter import Parameter
 from torch.nn.modules.module import Module
 
-from dataset import load_cora
+from dataset import load_citeseer
 from utils import accuracy
 
 from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
+
 
 class GraphConvolution(Module):
   def __init__(self, in_features, out_features, bias=True):
@@ -59,6 +60,7 @@ class GCN(nn.Module):
     x = F.dropout(x, self.dropout, training=self.training)
     x = self.gc2(x,adj)
     return F.log_softmax(x, dim=1)
+
 
 def train(epoch):
     t = time.time()
@@ -104,7 +106,7 @@ def test():
     cm = confusion_matrix(label, pred)
     cm = cm / cm.sum(axis=1)[:, None]
     _, ax = plt.subplots()
-    disp = ConfusionMatrixDisplay(cm, display_labels=np.array([0, 1, 2, 3, 4, 5, 6]))
+    disp = ConfusionMatrixDisplay(cm, display_labels=np.array([0, 1, 2, 3, 4, 5]))
     disp = disp.plot(include_values=True, cmap='viridis', ax=ax, xticks_rotation='horizontal',
                     values_format='.2f')
     plt.show()
@@ -118,16 +120,14 @@ args = {
     "epochs": 200,
     "lr": 0.01,
     "weight_decay": 5e-4,
-    "hidden": 500,
+    "hidden": 300,
     "dropout": 0.5,
     # feature_mode
-    # -1 : Use given feature vector and Louvain initialized vector
-    # 0 : Use given feature vector(word bag). In this case, FEATURE_SCALE will not be used
-    # 1 : Use Louvain initialized vector scaled with FEATURE_SCALE
-    # 2 : Use torch.randn(FEATURE_SCALE) as feature vector
-    # 3 : Use torch.ones(FEATURE_SCALE) as feature vector(with normalization)
+    # 0 : Use torch.randn(FEATURE_SCALE) as feature vector
+    # 1 : Use torch.ones(FEATURE_SCALE) as feature vector(with normalization)
+    # 2 : Use Louvain initialized vector scaled with FEATURE_SCALE
     "feature_mode": 0, 
-    "feature_scale": 6
+    "feature_scale": 500
 }
 
 args["cuda"] = not args["no_cuda"] and torch.cuda.is_available()
@@ -137,7 +137,7 @@ torch.manual_seed(args["seed"])
 if args["cuda"]:
     torch.cuda.manual_seed(args["seed"])
 
-adj, features, labels, idx_train, idx_val, idx_test = load_cora(args["feature_mode"], args["feature_scale"])
+adj, features, labels, idx_train, idx_val, idx_test = load_citeseer(args["feature_mode"], args["feature_scale"])
 
 model = GCN(nfeat=features.shape[1],
             nhid=args["hidden"],

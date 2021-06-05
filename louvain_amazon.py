@@ -50,3 +50,7 @@ print(labels)
 
 save_dict_as(label_cnt_map, 'amazon.labelcnt')
 save_array_as(labels, 'amazon.label')
+
+# ======== Louvain Method result ===========
+# Total labels : 297
+# Modularity for this label set : 0.9258703662074155

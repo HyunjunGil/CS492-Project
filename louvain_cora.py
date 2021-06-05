@@ -35,5 +35,8 @@ print(labels)
 save_dict_as(label_cnt_map, 'cora.labelcnt')
 save_array_as(labels, 'cora.label')
 
+# ======== Louvain Method result ===========
+# Total labels : 116
+# Modularity for this label set : 0.8183546158465342
 
 
