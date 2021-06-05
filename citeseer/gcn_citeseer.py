@@ -33,7 +33,7 @@ class GraphConvolution(Module):
 
   def reset_parameters(self):
     stdv = 1. / math.sqrt(self.weight.size(1))
-    self.weight.data.uniform_(stdv, stdv)
+    self.weight.data.uniform_(-stdv, stdv)
     if self.bias is not None:
       self.bias.data.uniform_(-stdv, stdv)
   
@@ -127,7 +127,7 @@ args = {
     # 1 : Use torch.ones(FEATURE_SCALE) as feature vector(with normalization)
     # 2 : Use Louvain initialized vector scaled with FEATURE_SCALE
     "feature_mode": 0, 
-    "feature_scale": 500
+    "feature_scale": 2000
 }
 
 args["cuda"] = not args["no_cuda"] and torch.cuda.is_available()
