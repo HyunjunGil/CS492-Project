@@ -27,6 +27,11 @@ print('======== Louvain Method result ===========')
 print('Total labels : {}'.format(labels_cnt))
 print('Modularity for this label set : {}'.format(q))
 
+
+# ======== Louvain Method result ===========
+# Total labels : 340
+# Modularity for this label set : 0.6485758468176017
+
 loader = np.load('amazon_electronics_photo.npz')
 loader = dict(loader)
 adj = sp.csr_matrix((loader['adj_data'], loader['adj_indices'], loader['adj_indptr']),
@@ -45,3 +50,7 @@ save_array_as(labels, 'amazon_photo.label')
 print('======== Louvain Method result ===========')
 print('Total labels : {}'.format(labels_cnt))
 print('Modularity for this label set : {}'.format(q))
+
+# ======== Louvain Method result ===========
+# Total labels : 157
+# Modularity for this label set : 0.7514209183802092

@@ -86,6 +86,7 @@ def train(epoch):
           'loss_val: {:.4f}'.format(loss_val.item()),
           'acc_val: {:.4f}'.format(acc_val.item()),
           'time: {:.4f}s'.format(time.time() - t))
+    return loss_val, acc_val
 
 def test():
     model.eval()
@@ -127,7 +128,8 @@ args = {
     # 1 : Use torch.ones(FEATURE_SCALE) as feature vector(with normalization)
     # 2 : Use Louvain initialized vector scaled with FEATURE_SCALE
     "feature_mode": 0, 
-    "feature_scale": 2000
+    "feature_scale": 2110
+    # Number of community from Louvain: 422
 }
 
 args["cuda"] = not args["no_cuda"] and torch.cuda.is_available()
@@ -138,7 +140,7 @@ if args["cuda"]:
     torch.cuda.manual_seed(args["seed"])
 
 adj, features, labels, idx_train, idx_val, idx_test = load_citeseer(args["feature_mode"], args["feature_scale"])
-
+print(features.size())
 model = GCN(nfeat=features.shape[1],
             nhid=args["hidden"],
             nclass=labels.max().item() + 1,
@@ -158,8 +160,16 @@ if args["cuda"]:
 """Start training."""
 
 t_total = time.time()
+loss_values = []
+acc_values = []
 for epoch in range(args["epochs"]):
-    train(epoch)
+  loss_val, acc_val = train(epoch)
+  loss_values.append(loss_val.cpu().detach())
+  acc_values.append(acc_val.cpu().detach())
+
+
+np.save('train_acc_random_cite', acc_values)
+
 print("Optimization Finished!")
 print("Total time elapsed: {:.4f}s".format(time.time() - t_total))
 

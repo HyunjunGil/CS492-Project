@@ -58,14 +58,13 @@ class GCN(nn.Module):
     # self.gc1 = GraphConvolution(nfeat, nclass)
 
   def forward(self, x, adj):
-    # x = F.leaky_relu(self.gc1(x, adj))
-    # x = F.dropout(x, self.dropout, training=self.training)
-    # x = self.fc1(x) 
-
-    x = F.relu(self.gc1(x, adj))
+    x = F.leaky_relu(self.gc1(x, adj))
     x = F.dropout(x, self.dropout, training=self.training)
-    x = self.gc2(x,adj)
+    x = self.fc1(x) 
 
+    # x = F.relu(self.gc1(x, adj))
+    # x = F.dropout(x, self.dropout, training=self.training)
+    # x = self.gc2(x,adj)
     return F.log_softmax(x, dim=1)
 
 def train(epoch):
@@ -94,6 +93,8 @@ def train(epoch):
           'loss_val: {:.4f}'.format(loss_val.item()),
           'acc_val: {:.4f}'.format(acc_val.item()),
           'time: {:.4f}s'.format(time.time() - t))
+
+    return loss_val, acc_val
 
 def test():
     model.eval()
@@ -124,7 +125,7 @@ def test():
 args = {
     "no_cuda": False,
     "fastmode": False,
-    "seed": 42,
+    "seed": 20,
     "epochs": 200,
     "lr": 0.01,
     "weight_decay": 5e-4,
@@ -136,8 +137,10 @@ args = {
     # 1 : Use Louvain initialized vector scaled with FEATURE_SCALE
     # 2 : Use torch.randn(FEATURE_SCALE) as feature vector
     # 3 : Use torch.ones(FEATURE_SCALE) as feature vector(with normalization)
-    "feature_mode": 1, 
-    "feature_scale": 5
+    "feature_mode": 2, 
+    "feature_scale": 1020
+    # Number of communities from Louvain : 340
+
 }
 
 args["cuda"] = not args["no_cuda"] and torch.cuda.is_available()
@@ -148,7 +151,7 @@ if args["cuda"]:
     torch.cuda.manual_seed(args["seed"])
 
 adj, features, labels, idx_train, idx_val, idx_test = load_amazon(args["feature_mode"], args["feature_scale"], dataset = 'computer')
-
+print(features.size())
 model = GCN(nfeat=features.shape[1],
             nhid=args["hidden"],
             nclass=labels.max().item() + 1,
@@ -168,8 +171,15 @@ if args["cuda"]:
 """Start training."""
 
 t_total = time.time()
+loss_values = []
+acc_values = []
 for epoch in range(args["epochs"]):
-    train(epoch)
+    loss_val, acc_val = train(epoch)
+    loss_values.append(loss_val.cpu().detach())
+    acc_values.append(acc_val.cpu().detach())
+
+np.save('train_acc_random_comp', acc_values)
+
 print("Optimization Finished!")
 print("Total time elapsed: {:.4f}s".format(time.time() - t_total))
 

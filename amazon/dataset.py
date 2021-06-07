@@ -12,8 +12,11 @@ def load_amazon(feature_mode = 0, feature_scale = 1, dataset = 'computer'):
   loader = dict(loader)
   adj_matrix = sp.csr_matrix((loader['adj_data'], loader['adj_indices'], loader['adj_indptr']),
                                    shape=loader['adj_shape'])
-                                
 
+  adj_matrix = adj_matrix + adj_matrix.T.multiply(adj_matrix.T > adj_matrix) - adj_matrix.multiply(adj_matrix.T > adj_matrix)
+  adj_matrix = normalize (adj_matrix + sp.eye(adj_matrix.shape[0]))
+                                
+  print(len(loader['adj_data']), len(loader['adj_indices']), len(loader['adj_indptr']))
   if 'attr_data' in loader:
     # Attributes are stored as a sparse CSR matrix
     attr_matrix = sp.csr_matrix((loader['attr_data'], loader['attr_indices'], loader['attr_indptr']),
